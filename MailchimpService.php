@@ -37,7 +37,7 @@ class MailchimpService
 		$this->userid = $user->id;
 	}
 
-	/** Subscribe new email
+	/** Subscribe new email (or updates existing subscriber status+name)
 	 * @param string $email
 	 * @param string $fname
 	 * @param string $lname
@@ -54,15 +54,14 @@ class MailchimpService
 				"status" => "subscribed",
 			));
 		}
-		
-		//doesnt work -> PATCH for status doesnt apply :-/
-		elseif ($status == 'unsubscribed') //change existing
+		//status is a string, but not the right one
+		elseif ($status != 'subscribed')
 		{
-			$this->apiCall('PATCH', "/lists/$this->list/members/" . md5($email), [
+			$this->apiCall('PATCH', "/lists/$this->list/members/" . md5($email), array(
 				"email_address" => $email,
-				"merge_fields" => ["FNAME" => $fname, "LNAME" => $lname],
+				"merge_fields" => array("FNAME" => $fname, "LNAME" => $lname),
 				"status" => "subscribed",
-			]);
+			));
 		}
 		else //status wrong (ie. pending)  -> delete mail and re-add it
 		{
@@ -76,18 +75,29 @@ class MailchimpService
 		}
 	}
 
-	/** Unsubscribe email
+	/** Unsubscribe email (if doesnt exist, nothing happens)
 	 * @param $email
 	 */
-	public function delete($email)
+	public function unsubscribe($email)
 	{
 		//can return 404, but doesnt matter
-		$this->apiCall('DELETE', "/lists/$this->list/members/" . md5($email));
+		$this->apiCall('PATCH', "/lists/$this->list/members/" . md5($email), array(
+			"status" => "unsubscribed",
+		));
 	}
 
-	/** Get
+	/** Deletes email user (CAREFUL!! better unsubscibe him)
 	 * @param $email
-	 * @return bool|string false for nonexisting, string of subscribed|unsubscribed|pending|cleaned
+	 */
+//	public function delete($email)
+//	{
+//		//can return 404, but doesnt matter
+//		$this->apiCall('DELETE', "/lists/$this->list/members/" . md5($email));
+//	}
+
+	/** Get status of non-exist or subscribed|unsubscribed|pending|cleaned
+	 * @param $email
+	 * @return false|string
 	 */
 	public function getStatus($email)
 	{
@@ -101,17 +111,17 @@ class MailchimpService
 		return $ret->response->status;
 	}
 
-	/**
+	/** Make custom api call
 	 * @param string $method POST or GET
 	 * @param string $resource starting with /
 	 * @param array $body sent as JSON
 	 * @return object(code, response)
 	 */
-	protected function apiCall($method, $resource, $body = NULL)
+	public function apiCall($method, $resource, $body = NULL)
 	{
 		$json = $body ? json_encode($body) : '';
 
-		//request
+		//construct request
 		$ch = curl_init();
 
 		curl_setopt($ch, CURLOPT_URL, $this->apiurl . $resource);
@@ -119,14 +129,15 @@ class MailchimpService
 		curl_setopt($ch, CURLOPT_USERPWD, "apikey:" . $this->apikey);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-		if ($method == 'POST')
-		{
-			curl_setopt($ch, CURLOPT_POST, true);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
-		}
-		elseif ($method == 'PATCH' OR $method == 'DELETE')
+		if (in_array($method, array('POST', 'PATCH', 'DELETE')))
 		{
 			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+		}
+
+		if ($body)
+		{
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
 		}
 
 		//exec

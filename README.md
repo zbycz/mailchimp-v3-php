@@ -31,6 +31,7 @@ Request played for the example above:
 2015-06-05 18:15:09 (uid=53) POST /lists/87421ce950/members{"email_address":"testmailforpatch@pppp.cz","merge_fields":{"FNAME":"jm","LNAME":"p\u0159"},"status":"subscribed"} >>> 200 {"id":"50ed17fa41ba3906dade48038810de77","email_address":"testmailforpatch@pppp.cz","status":"subscribed"...}
 
 2015-06-05 18:15:09 (uid=53) GET /lists/87421ce950/members/50ed17fa41ba3906dade48038810de77 >>> 200 {"id":"50ed17fa41ba3906dade48038810de77","email_address":"testmailforpatch@pppp.cz","status":"subscribed"...}
+
 2015-06-05 18:15:09 (uid=53) DELETE /lists/87421ce950/members/50ed17fa41ba3906dade48038810de77 >>> 204 
 
 2015-06-05 18:15:09 (uid=53) GET /lists/87421ce950/members/50ed17fa41ba3906dade48038810de77 >>> 404 {"type":"http://kb.mailchimp.com/api/error-docs/404-resource-not-found","title":"Resource Not Found","status":404,"detail":"The requested resource could not be found.","instance":"bad7b267-b946-4024-a5bb-127b7ffe5178"}
